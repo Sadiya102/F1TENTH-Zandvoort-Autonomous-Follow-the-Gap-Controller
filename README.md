@@ -9,12 +9,13 @@ The project focuses on autonomous vehicle navigation, waypoint-based path tracki
 
 - Develop an autonomous controller for the Zandvoort circuit.
 - Generate and follow a manually created racing path.
-- Implement waypoint-based autonomous navigation.
+- Implement Pure Pursuit-based path tracking.
 - Detect and count completed laps automatically.
 - Measure individual lap times and total race duration.
-- Experiment with speed optimization.
-- Monitor path-tracking errors and implement safety mechanisms.
-- Improve vehicle stability and racing performance
+- Implement progressive speed scheduling.
+- Monitor vehicle performance through race telemetry.
+- Implement tracking-error monitoring and safety mechanisms.
+- Improve vehicle stability and autonomous racing performance
 
 ## 2. Requirements
 
@@ -135,27 +136,15 @@ It calculates steering commands from the vehicle's current position and a select
 | Control Frequency | 20 Hz |
 | Path Spacing | 0.20 m |
 
-### ROS 2 Communication
-
-The controller communicates with the simulator through ROS 2 topics.
-
-| Topic | Message Type | Purpose |
-|---|---|---|
-| `/ego_racecar/odom` | `nav_msgs/msg/Odometry` | Receives vehicle position and orientation |
-| `/drive` | `ackermann_msgs/msg/AckermannDriveStamped` | Publishes steering and speed commands |
-| `/manual_waypoint_path` | `nav_msgs/msg/Path` | Visualizes the reference path in RViz2 |
-
-The controller successfully completed one full lap at a constant speed of 1.0 m/s while following the manually generated waypoint route.
-
 ---
 
 ## 7. Ten-Lap Controller
 
-A separate controller was developed for multi-lap testing: `hybrid_zandvoort_10lap.py`.
+A separate controller was developed for multi-lap testing: "hybrid_zandvoort_10lap.py".
 
 It builds on the working Pure Pursuit controller and adds race-management functionality.
 
-### Implemented Features
+Implemented Features
 
 - Automatic lap detection using waypoint progression
 - Lap counting up to 10 laps
@@ -164,46 +153,64 @@ It builds on the working Pure Pursuit controller and adds race-management functi
 - Elapsed race-time display
 - Estimated remaining-time calculation
 - Automatic stopping after 10 completed laps
-- Speed adjustment after each completed lap
+- Progressive speed adjustment after each completed lap
 - Path-tracking error monitoring
 - Emergency stopping when the tracking error becomes excessive
 
-The original one-lap controller remains separate from the experimental ten-lap controller, so the basic path-following implementation stays available while additional race-management features are tested.
+### Adaptive Path Tracking
+
+The ten-lap controller uses an expanded waypoint search and adaptive lookahead distance to improve path tracking during autonomous driving.
+
+### Curvature-Based Speed Management
+
+Vehicle speed is adjusted according to path curvature to help maintain stability when navigating corners.
+
+### Tracking-Error Monitoring and Safety
+
+The controller continuously monitors the distance between the vehicle and the reference path. Speed is reduced when tracking error increases, with an emergency stop mechanism for excessive deviation.
+
+### Race Telemetry System
+
+The controller displays race information during execution, including:
+
+- Current lap and target speed
+- Individual lap time
+- Average lap time
+- Total elapsed race time
+- Estimated remaining time
+- Race completion status
+
+This telemetry helps monitor vehicle performance and evaluate the progress of each lap.
+
+The original one-lap controller remains separate from the ten-lap controller, keeping the basic path-following implementation available for independent testing.
 
 ---
 
-## 8. Five-Lap Test Results
+## 8. Ten-Lap Test Results
 
-During the first ten-lap controller experiment, the vehicle successfully completed five consecutive laps using an increasing speed schedule.
+During the experiment, the vehicle successfully completed ten consecutive laps using an increasing speed schedule.
 
 ### Test Results
 
 | Lap | Target Speed | Lap Time |
 |---|---|---|
-| 1 | 1.50 m/s | 258.09 s |
-| 2 | 1.80 m/s | 215.10 s |
-| 3 | 2.16 m/s | 179.60 s |
-| 4 | 2.59 m/s | 150.20 s |
-| 5 | 3.11 m/s | 125.60 s |
-
-**Average lap time:** approximately 185.72 s
+| 1 | 1.50 m/s | 291.7 s |
+| 2 | 1.66 m/s | 274.2 s |
+| 3 | 1.80 m/s | 261.5 s |
+| 4 | 2.00 m/s | 250.1 s |
+| 5 | 2.20 m/s | 239.8 s |
+| 6 | 2.42 m/s | 230.5 s |
+| 7 | 2.77 m/s | 222.1 s |
+| 8 | 2.90 m/s | 214.1 s |
+| 9 | 3.33 m/s | 207.5 s |
+| 10 | 3.33 m/s | 🏆200.9 s |
 
 ### Observations
 
-- All five laps were completed successfully.
+- The controller completed ten consecutive laps in the simulation.
 - Lap times decreased as the target speed increased.
 - Automatic lap detection and timing functions operated during the test.
-- Tracking error increased at higher speeds.
-- The waypoint index eventually stopped progressing around waypoints 759–765.
-- The vehicle could no longer reliably maintain the reference path.
-
-### Test Evaluation
-
-The five-lap experiment demonstrated that the controller can perform consecutive autonomous laps and measure individual lap times. 
-
-It also revealed limitations in high-speed path tracking.
-
-Further controller tuning is required to improve vehicle stability and maintain reliable waypoint progression at higher speeds.
+- The controller used path-tracking and safety mechanisms throughout the experiment.
 
 ---
 
@@ -348,9 +355,11 @@ ros2 topic info /drive --verbose
 - [ ] Vehicle responds to the commands
 - [ ] Vehicle follows the reference waypoint path
 - [ ] Lap progression and lap-time measurements are monitored
+- [ ] Progessive speed adjustments are applied
+- [ ] Ten-lap completion and automatic stopping are verified
 
 
-
+---
 
 ## 14. Troubleshooting
 
@@ -360,7 +369,7 @@ The following table describes possible problems and basic solutions.
 
 | Problem | Possible Cause | Suggested Solution |
 |---|---|---|
-| Simulator does not launch | Missing packages or incorrect environment setup | Check /ego_racecar/odom. |
+| Simulator does not launch | Missing packages or incorrect environment setup | Check `/ego_racecar/odom`. |
 | Vehicle does not move | Controller is not publishing commands | Check the `/drive` topic. |
 | No LiDAR data | Simulator or sensor connection issue | Check whether the `/scan` topic is available. |
 | No odometry commands | Simulator communication issue | Check the terminal for errors and restart the controller. |
@@ -368,6 +377,8 @@ The following table describes possible problems and basic solutions.
 | Vehicle moves in an unexpected direction | Incorrect steering calculation or parameter settings | Review the steering angle and controller configuration. |
 | Vehicle losses the reference path | Excessive speed or unstable steering response | Reduce speed and tune the lookahead distance. |
 | Python import errors | Missing dependencies or incorrect Python environment | Install the required dependencies and source the ROS 2 environment. |
+
+---
 
 ## 15. Current Development Status
 
@@ -381,46 +392,29 @@ The following table summarizes the current progress of the project.
 | Manual Waypoint Generation | ✅ Completed |
 | Path Interpolation | ✅ Completed |
 | Pure Pursuit Path Tracking | ✅ Working |
-| Full Lap at 1.0 m/s | ✅ Completed |
+| One-Lap Autonomous Run | ✅ Completed |
+| Adaptive Lookahead | ✅ Implemented |
+| Curvature-Based Speed Management | ✅ Implemented |
 | Automatic Lap Detection | ✅ Implemented |
 | Lap-Time Measurement | ✅ Implemented |
-| Five Consecutive Laps | ✅ Completed |
-| Speed Scheduling | 🧪 Implemented Experimentally |
+| Ten-Lap Autonomous  | ✅ Completed |
+| Race Telemetry | ✅ Implemented  |
 | Tracking-Error Safety Stop | ✅ Implemented |
-| Reliable High-Speed Tracking | ⚠️ Requires Improvement |
-| Complete 10-Lap Run | ⏳ Pending |
+| 10-Lap Autonomous Run | ✅ Completed |
 
 ---
 
-## 16. Future Improvements
+## 16. Ten lap Autonomous Lap Demonstration
 
-The next development stage focuses on improving the controller's reliability, stability, and overall racing performance.
-
-Planned improvements:
-
-- [ ] Improve high-speed path tracking
-- [ ] Tune lookahead distance and steering response
-- [ ] Test safe operating speeds systematically
-- [ ] Improve speed adaptation around sharp corners
-- [ ] Investigate waypoint progression and tracking-error behavior
-- [ ] Complete a reliable ten-lap run
-- [ ] Compare lap times under different speed schedules
-- [ ] Optimize overall autonomous racing performance
+[![F1tenth Zandvoort Controller ](https://img.youtube.com/vi/VMc_mQlOQj0/0.jpg)](https://youtu.be/VMc_mQlOQj0)
 
 ---
 
 ## 17. Conclusion
 
-This project explores autonomous vehicle navigation and racing using the **F1TENTH Gym Simulator**, **ROS 2 Humble**, and **Python**.
-
-Development has progressed from simulator configuration and manual waypoint generation to autonomous path tracking, lap detection, performance measurement, and experimental speed management.
-
-The Pure Pursuit controller has successfully completed a full lap at 1.0 m/s and five consecutive laps during an increasing-speed experiment.
-
-The experiments also identified limitations in high-speed path tracking, highlighting the importance of steering stability, speed management, and safety mechanisms.
-
-The overall goal is to develop a reliable autonomous racing controller capable of completing ten consecutive laps on the Zandvoort circuit while evaluating performance through vehicle velocity, lap times, and tracking stability.
-
-> **Project Status:** Active Development
->
-> **Current Focus:** Improving path-tracking stability, conducting controlled speed experiments, and working toward a reliable ten-lap autonomous racing run.
+- This project developed a Pure Pursuit-based autonomous conroller.
+- The vehicle followed a manually generated Zandvoort waypoint path.
+- The ten-lap controller implemented progressive and timing.
+- Race telemetry tracked lap progression and timing.
+-  The ten-lap simulation experiment was completed.
+-  Further work focuses on repeatability, timing accuracy and high-speed performance.
