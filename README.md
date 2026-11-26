@@ -136,6 +136,39 @@ It calculates steering commands from the vehicle's current position and a select
 | Control Frequency | 20 Hz |
 | Path Spacing | 0.20 m |
 
+### Mathematical Formulation
+
+The Pure Pursuit algorithm calculates the steering angle using the vehicle's position, heading, wheelbase, and target waypoint.
+
+The target-point distance is calculated as:
+
+```
+Ld = √((xt − x)² + (yt − y)²)
+```
+
+The heading difference is:
+
+```
+α = atan2(yt − y, xt − x) − θ
+```
+
+The steering angle is calculated using:
+
+```
+δ = arctan( (2 · L · sin(α)) / Ld )
+```
+
+Where:
+
+- **Ld** = Lookahead distance
+- **L** = Vehicle wheelbase
+- **α** = Heading difference
+- **θ** = Vehicle orientation
+- **δ** = Steering angle
+- **(xt, yt)** = Target waypoint coordinates
+
+The calculated steering angle is limited by the maximum steering constraint.
+
 ---
 
 ## 7. Ten-Lap Controller
@@ -214,40 +247,7 @@ During the experiment, the vehicle successfully completed ten consecutive laps u
 
 ---
 
-## 9. Speed Optimization and Safety
-
-Further development focuses on experimenting with different speed schedules while maintaining stable vehicle movement.
-
-One experimental approach uses a descending speed schedule, beginning at a higher speed and reducing the target speed by 20% after each completed lap.
-
-### Experimental Speed Schedule
-
-| Lap | Target Speed |
-|---|---|
-| 1 | 8.00 m/s |
-| 2 | 6.40 m/s |
-| 3 | 5.12 m/s |
-| 4 | 4.10 m/s |
-| 5 | 3.28 m/s |
-| 6 | 2.62 m/s |
-| 7 | 2.10 m/s |
-| 8 | 1.68 m/s |
-| 9 | 1.34 m/s |
-| 10 | 1.07 m/s |
-
-> **Important:** This schedule is experimental and has not been successfully completed.
-> An initial test at 8.0 m/s caused the tracking error to reach approximately 0.80 m within a few seconds. The safety mechanism stopped the vehicle.
-
-### Current Safety Mechanisms
-
-- Speed reduction when tracking error exceeds 0.25 m
-- Emergency stop when tracking error reaches 0.80 m
-
-These mechanisms prevent the vehicle from continuing to operate when it cannot reliably maintain the reference path. Further tuning and controlled speed testing are required before attempting the complete ten-lap schedule.
-
----
-
-## 10. Building the ROS 2 Package
+## 9. Building the ROS 2 Package
 
 The project uses a ROS 2 Python package named `my_gap_controller`.
 
@@ -264,7 +264,7 @@ After a successful build, the workspace is ready to run the installed controller
 
 ---
 
-## 11. Running the F1TENTH Simulator
+## 10. Running the F1TENTH Simulator
 
 The simulator must be running before starting either autonomous controller.
 
@@ -296,7 +296,7 @@ Keep Terminal 1 running while using the simulator.
 
 ---
 
-## 12. Running the Autonomous Controllers
+## 11. Running the Autonomous Controllers
 
 Open a separate terminal after the simulator has launched.
 
@@ -329,7 +329,7 @@ ros2 run my_gap_controller hybrid_zandvoort_10lap
 
 ---
 
-## 13. Monitoring and Verification
+## 12. Monitoring and Verification
 
 ROS 2 commands can be used to monitor communication between the simulator and the autonomous controller.
 
@@ -361,7 +361,7 @@ ros2 topic info /drive --verbose
 
 ---
 
-## 14. Troubleshooting
+## 13. Troubleshooting
 
 During the development and testing of the F1TENTH controller, some common issues may occur.
 
@@ -380,7 +380,7 @@ The following table describes possible problems and basic solutions.
 
 ---
 
-## 15. Current Development Status
+## 14. Current Development Status
 
 The following table summarizes the current progress of the project.
 
@@ -404,13 +404,13 @@ The following table summarizes the current progress of the project.
 
 ---
 
-## 16. Ten lap Autonomous Lap Demonstration
+## 15. Ten lap Autonomous Lap Demonstration
 
 [![F1tenth Zandvoort Controller ](https://img.youtube.com/vi/VMc_mQlOQj0/0.jpg)](https://youtu.be/VMc_mQlOQj0)
 
 ---
 
-## 17. Conclusion
+## 16. Conclusion
 
 - This project developed a Pure Pursuit-based autonomous conroller.
 - The vehicle followed a manually generated Zandvoort waypoint path.
